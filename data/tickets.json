@@ -1,0 +1,22 @@
+[
+  {"id": "TKT-001", "customer_name": "Alice Johnson", "customer_email": "alice@example.com", "order_id": "ORD-1001", "issue": "I want a refund for my recent order. It arrived damaged."},
+  {"id": "TKT-002", "customer_name": "Bob Smith", "customer_email": "bob@example.com", "order_id": "ORD-1002", "issue": "Where is my order? I haven't received any shipping updates."},
+  {"id": "TKT-003", "customer_name": "Carol White", "customer_email": "carol@example.com", "order_id": "ORD-1003", "issue": "Is the USB-C Hub still in stock? I want to order another one."},
+  {"id": "TKT-004", "customer_name": "Alice Johnson", "customer_email": "alice@example.com", "order_id": "ORD-1001", "issue": "Has my refund been processed yet?"},
+  {"id": "TKT-005", "customer_name": "Bob Smith", "customer_email": "bob@example.com", "order_id": "ORD-1002", "issue": "I need to cancel my order immediately."},
+  {"id": "TKT-006", "customer_name": "Carol White", "customer_email": "carol@example.com", "order_id": "ORD-1004", "issue": "My order was cancelled but I never got a refund."},
+  {"id": "TKT-007", "customer_name": "David Lee", "customer_email": "david@example.com", "order_id": "ORD-1005", "issue": "The mouse pad I received is the wrong size."},
+  {"id": "TKT-008", "customer_name": "Alice Johnson", "customer_email": "alice@example.com", "order_id": "ORD-1003", "issue": "When will my USB-C Hub arrive? It still says processing."},
+  {"id": "TKT-009", "customer_name": "Bob Smith", "customer_email": "bob@example.com", "order_id": "ORD-1002", "issue": "Can you send me the tracking number for my keyboard?"},
+  {"id": "TKT-010", "customer_name": "Carol White", "customer_email": "carol@example.com", "order_id": "ORD-1005", "issue": "I received my order but the package was open and resealed."},
+  {"id": "TKT-011", "customer_name": "David Lee", "customer_email": "david@example.com", "order_id": "ORD-1001", "issue": "Do you have wireless headphones in stock?"},
+  {"id": "TKT-012", "customer_name": "Alice Johnson", "customer_email": "alice@example.com", "order_id": "ORD-1001", "issue": "I want to return the headphones. How do I get a refund?"},
+  {"id": "TKT-013", "customer_name": "Bob Smith", "customer_email": "bob@example.com", "order_id": "ORD-1002", "issue": "My mechanical keyboard has a broken key. I want a replacement."},
+  {"id": "TKT-014", "customer_name": "Carol White", "customer_email": "carol@example.com", "order_id": "ORD-1004", "issue": "Why was my webcam order cancelled? I still want it."},
+  {"id": "TKT-015", "customer_name": "David Lee", "customer_email": "david@example.com", "order_id": "ORD-1005", "issue": "My order shows delivered but I never received it."},
+  {"id": "TKT-016", "customer_name": "Alice Johnson", "customer_email": "alice@example.com", "order_id": "ORD-1003", "issue": "Is there an update on my USB-C Hub shipment?"},
+  {"id": "TKT-017", "customer_name": "Bob Smith", "customer_email": "bob@example.com", "order_id": "ORD-1002", "issue": "I was charged twice for my keyboard order."},
+  {"id": "TKT-018", "customer_name": "Carol White", "customer_email": "carol@example.com", "order_id": "ORD-1005", "issue": "The mouse pad colour is different from what was shown on the website."},
+  {"id": "TKT-019", "customer_name": "David Lee", "customer_email": "david@example.com", "order_id": "ORD-1001", "issue": "Can I upgrade my headphones order to a newer model?"},
+  {"id": "TKT-020", "customer_name": "Alice Johnson", "customer_email": "alice@example.com", "order_id": "ORD-1001", "issue": "I am very unhappy with the service. Nothing has been resolved for weeks."}
+]
