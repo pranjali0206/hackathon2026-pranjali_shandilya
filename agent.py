@@ -25,7 +25,10 @@ You resolve customer support tickets by using tools to look up data and followin
 - check_shipping({{"order_id": "ORD-XXXX"}}) — check shipping and tracking status
 - update_ticket_status({{"ticket_id": "TKT-XXX", "new_status": "status", "note": "note"}}) — update ticket status
 
-⚠️ CRITICAL: You ONLY have these 8 tools. Do NOT call check_warranty, check_return_deadline, check_customer_tier, cancel_order, or any other tool. If you need warranty info, use get_order and escalate_ticket. If you need return deadline, use get_order (it includes return_deadline). Customer tier is included in get_customer_info and get_order results.
+⚠️ CRITICAL: You ONLY have these 8 tools. Do NOT call check_warranty, check_return_deadline,
+check_customer_tier, cancel_order, or any other tool. If you need warranty info, use get_order
+and escalate_ticket. If you need return deadline, use get_order (it includes return_deadline).
+Customer tier is included in get_customer_info and get_order results.
 
 === HOW TO RESPOND ===
 At each step output EXACTLY ONE of these:
@@ -81,7 +84,7 @@ def parse_final(text):
         return response, confidence
     return None, None
 
-def call_groq_with_retry(messages, retries=8, wait=60):
+def call_groq_with_retry(messages, retries=5, wait=20):
     for attempt in range(retries):
         try:
             response = client.chat.completions.create(
@@ -94,8 +97,9 @@ def call_groq_with_retry(messages, retries=8, wait=60):
         except Exception as e:
             error_str = str(e)
             if "rate_limit" in error_str or "429" in error_str:
-                print(f"⏳ Rate limit hit, waiting {wait}s... (attempt {attempt+1}/{retries})")
-                time.sleep(wait)
+                wait_time = wait * (attempt + 1)  # 20s, 40s, 60s...
+                print(f"⏳ Rate limit hit — waiting {wait_time}s (attempt {attempt+1}/{retries})")
+                time.sleep(wait_time)
             elif "Connection error" in error_str or "getaddrinfo" in error_str:
                 print(f"🔌 Network error, retrying in 5s... (attempt {attempt+1}/{retries})")
                 time.sleep(5)
@@ -138,8 +142,11 @@ Please resolve this ticket step by step using your tools and company policy.
             print(f"💬 Response: {final_response}")
             return {
                 "ticket_id": ticket_id,
+                "customer_email": customer_email,
+                "subject": subject,
+                "customer_tier": ticket.get("customer_tier", "standard"),
                 "status": "resolved",
-                "response": final_response,
+                "resolution": final_response,
                 "confidence": confidence,
                 "steps": steps
             }
@@ -169,12 +176,15 @@ Please resolve this ticket step by step using your tools and company policy.
                 "content": "Please continue. Either call a tool using TOOL_CALL: tool_name({}) or write your FINAL: response [Confidence: X%]"
             })
 
-    # Dead letter queue
+    # Escalate if max steps reached
     print(f"\n⚠️ ESCALATED — max steps reached")
     return {
         "ticket_id": ticket_id,
+        "customer_email": customer_email,
+        "subject": subject,
+        "customer_tier": ticket.get("customer_tier", "standard"),
         "status": "escalated",
-        "response": "This ticket has been escalated to a human agent for further review.",
+        "resolution": "This ticket has been escalated to a human agent for further review.",
         "confidence": 0,
         "steps": steps
     }

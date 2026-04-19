@@ -7,9 +7,13 @@ from data.mock_db import TICKETS
 print("🤖 AI Customer Support Agent Starting...")
 print(f"\n📋 Loaded {len(TICKETS)} tickets")
 
+demo_ids = ["TKT-001", "TKT-010", "TKT-017", "TKT-018"]
+TICKETS_TO_RUN = [t for t in TICKETS if t.get("ticket_id") in demo_ids]
+print(f"🎬 Demo mode: running {len(TICKETS_TO_RUN)} tickets")
+
 results = []
 
-for ticket in TICKETS:
+for ticket in TICKETS_TO_RUN:
     ticket_id = ticket.get("ticket_id", "N/A")
     customer_email = ticket.get("customer_email", "Unknown")
     subject = ticket.get("subject", "")
@@ -23,7 +27,7 @@ for ticket in TICKETS:
 
     result = process_ticket(ticket)
     results.append(result)
-    time.sleep(30)
+    time.sleep(3)
 
 # Save audit log
 os.makedirs("logs", exist_ok=True)
