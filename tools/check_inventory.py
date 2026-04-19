@@ -1,15 +1,31 @@
-from data.mock_db import INVENTORY
+﻿from data.mock_db import PRODUCTS_BY_ID, PRODUCTS
 
-def check_inventory(product_name: str) -> dict:
-    key = product_name.strip().lower()
-    if key in INVENTORY:
-        item = INVENTORY[key].copy()
-        item["product"] = product_name
-        item["in_stock"] = item["stock"] > 0
-        item["success"] = True
-        return item
+def check_inventory(args):
+    product_name = args.get("product_name", "").lower()
+    
+    # Search by name (partial match)
+    matches = [
+        p for p in PRODUCTS
+        if product_name in p["name"].lower()
+    ]
+    
+    if not matches:
+        return {
+            "found": False,
+            "message": f"No product found matching '{product_name}'."
+        }
+    
+    product = matches[0]
+    
     return {
-        "success": False,
-        "error": f"Product '{product_name}' not found. Available: {list(INVENTORY.keys())}",
-        "product": product_name
+        "found": True,
+        "product_id": product["product_id"],
+        "name": product["name"],
+        "category": product["category"],
+        "price": product["price"],
+        "stock": product["stock"],
+        "in_stock": product["stock"] > 0,
+        "warranty_months": product["warranty_months"],
+        "return_window_days": product["return_window_days"],
+        "registered_online": product["registered_online"]
     }

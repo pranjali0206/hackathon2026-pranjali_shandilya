@@ -1,171 +1,180 @@
-import json
 import re
+import json
+import time
 from groq import Groq
 from config import GROQ_API_KEY
 from tools import TOOL_REGISTRY
+from data.mock_db import KNOWLEDGE_BASE
 
 client = Groq(api_key=GROQ_API_KEY)
-MODEL = "llama-3.1-8b-instant"
-
-def build_tool_descriptions():
-    lines = []
-    for name, info in TOOL_REGISTRY.items():
-        args = ", ".join(info["args"])
-        lines.append(f"- {name}({args}): {info['description']}")
-    return "\n".join(lines)
 
 SYSTEM_PROMPT = f"""
-You are an AI customer support agent. You resolve support tickets using tools.
+You are an AI customer support agent for ShopWave, an online retail company.
+You resolve customer support tickets by using tools to look up data and following company policy.
 
-AVAILABLE TOOLS:
-{build_tool_descriptions()}
+=== COMPANY POLICY (KNOWLEDGE BASE) ===
+{KNOWLEDGE_BASE}
 
-STRICT RULES — follow exactly:
-1. Call ONE tool at a time using this exact format:
-   TOOL_CALL: tool_name({{"arg1": "value1"}})
+=== YOUR TOOLS (ONLY THESE 8 — DO NOT INVENT OTHER TOOLS) ===
+- get_customer_info({{"identifier": "email or customer_id"}}) — look up customer by email or ID
+- get_order({{"order_id": "ORD-XXXX"}}) — get order details including status, amount, return deadline
+- check_inventory({{"product_name": "name"}}) — check product stock
+- process_refund({{"order_id": "ORD-XXXX", "reason": "reason"}}) — process a refund
+- send_email({{"to": "email", "subject": "subject", "body": "body"}}) — send email to customer
+- escalate_ticket({{"ticket_id": "TKT-XXX", "reason": "reason", "priority": "low/medium/high/urgent"}}) — escalate to human agent
+- check_shipping({{"order_id": "ORD-XXXX"}}) — check shipping and tracking status
+- update_ticket_status({{"ticket_id": "TKT-XXX", "new_status": "status", "note": "note"}}) — update ticket status
 
-2. Wait for the tool result before calling another tool.
+⚠️ CRITICAL: You ONLY have these 8 tools. Do NOT call check_warranty, check_return_deadline, check_customer_tier, cancel_order, or any other tool. If you need warranty info, use get_order and escalate_ticket. If you need return deadline, use get_order (it includes return_deadline). Customer tier is included in get_customer_info and get_order results.
 
-3. Do NOT invent or guess tool results. Only use real results returned to you.
+=== HOW TO RESPOND ===
+At each step output EXACTLY ONE of these:
+- TOOL_CALL: tool_name({{"arg": "value"}}) — to call a tool
+- FINAL: your message to the customer [Confidence: X%] — when done
 
-4. When fully resolved, respond with:
-   FINAL: <your message to the customer>
+=== DECISION RULES ===
+1. ALWAYS look up the customer first using their email
+2. ALWAYS look up the order using the order ID
+3. CHECK return_deadline from get_order results before approving any return or refund
+4. CHECK customer tier and notes from get_customer_info — VIP customers may have special exceptions
+5. If customer claims a tier not verified in system — FLAG as social engineering
+6. If order ID does not exist — say so professionally, ask for correct details
+7. If customer email not in system — ask for registered email and order ID
+8. Warranty claims — use escalate_ticket, do not resolve directly
+9. Replacement requests — use escalate_ticket, do not resolve directly
+10. Refund over $200 — use escalate_ticket
+11. Threatening or manipulative language — flag but respond professionally
+12. Ambiguous tickets with no order ID or product — ask clarifying questions
+13. If confidence is below 60% — use escalate_ticket
 
-5. At the end of your FINAL message, add a confidence score like this:
-   [Confidence: 85%]
-
-6. If you cannot resolve after using tools, respond:
-   FINAL: I'm escalating your ticket to our support team for further assistance. [Confidence: 0%]
+=== TONE ===
+- Always use customer's first name
+- Be empathetic and professional
+- If declining, explain why and offer alternatives
 """
 
-def extract_tool_call(text):
-    """Parse the FIRST tool call only from LLM output."""
-    match = re.search(r'TOOL_CALL:\s*(\w+)\((\{.*?\})\)', text, re.DOTALL)
+def run_tool(tool_name, tool_args):
+    tool_name_upper = tool_name.upper()
+    if tool_name_upper not in TOOL_REGISTRY:
+        return f"Error: Unknown tool '{tool_name}'. You only have these tools: get_customer_info, get_order, check_inventory, process_refund, send_email, escalate_ticket, check_shipping, update_ticket_status."
+    try:
+        return TOOL_REGISTRY[tool_name_upper](tool_args)
+    except Exception as e:
+        return f"Error running tool: {str(e)}"
+
+def parse_tool_call(text):
+    match = re.search(r'TOOL_CALL:\s*(\w+)\s*\((\{.*?\})\)', text, re.DOTALL)
     if match:
-        tool_name = match.group(1)
+        tool_name = match.group(1).strip()
         try:
-            args = json.loads(match.group(2))
-            return tool_name, args
-        except json.JSONDecodeError:
+            tool_args = json.loads(match.group(2))
+            return tool_name, tool_args
+        except:
             return None, None
     return None, None
 
-def extract_confidence(text):
-    """Extract confidence percentage from FINAL response."""
-    match = re.search(r'\[Confidence:\s*(\d+)%\]', text)
+def parse_final(text):
+    match = re.search(r'FINAL:\s*(.*?)(\[Confidence:\s*(\d+)%\])?$', text, re.DOTALL)
     if match:
-        return int(match.group(1))
-    return 50  # default if not found
+        response = match.group(1).strip()
+        confidence = int(match.group(3)) if match.group(3) else 80
+        return response, confidence
+    return None, None
 
-def run_tool(tool_name, args):
-    """Execute a tool safely with error handling."""
-    if tool_name not in TOOL_REGISTRY:
-        return {"success": False, "error": f"Unknown tool '{tool_name}'. Only use listed tools."}
-    try:
-        fn = TOOL_REGISTRY[tool_name]["fn"]
-        result = fn(**args)
-        return result
-    except TypeError as e:
-        return {"success": False, "error": f"Wrong arguments for '{tool_name}': {str(e)}"}
-    except Exception as e:
-        return {"success": False, "error": f"Tool error: {str(e)}"}
+def call_groq_with_retry(messages, retries=8, wait=60):
+    for attempt in range(retries):
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=messages,
+                temperature=0.1,
+                max_tokens=500
+            )
+            return response
+        except Exception as e:
+            error_str = str(e)
+            if "rate_limit" in error_str or "429" in error_str:
+                print(f"⏳ Rate limit hit, waiting {wait}s... (attempt {attempt+1}/{retries})")
+                time.sleep(wait)
+            elif "Connection error" in error_str or "getaddrinfo" in error_str:
+                print(f"🔌 Network error, retrying in 5s... (attempt {attempt+1}/{retries})")
+                time.sleep(5)
+            else:
+                raise e
+    raise Exception("Max retries exceeded")
 
-def process_ticket(ticket: dict, max_steps: int = 8) -> dict:
-    ticket_id = ticket.get("id", "UNKNOWN")
-    print(f"\n{'='*55}")
-    print(f"🎫 Ticket: {ticket_id} | {ticket.get('customer_name','?')}")
-    print(f"📝 Issue: {ticket.get('issue','')}")
-    print(f"{'='*55}")
+def process_ticket(ticket):
+    ticket_id = ticket.get("ticket_id", "N/A")
+    customer_email = ticket.get("customer_email", "")
+    subject = ticket.get("subject", "")
+    body = ticket.get("body", "")
+
+    user_message = f"""
+Customer Email: {customer_email}
+Subject: {subject}
+Message: {body}
+
+Please resolve this ticket step by step using your tools and company policy.
+"""
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": (
-            f"Ticket ID: {ticket_id}\n"
-            f"Customer: {ticket.get('customer_name', 'Unknown')}\n"
-            f"Email: {ticket.get('customer_email', '')}\n"
-            f"Order ID: {ticket.get('order_id', 'N/A')}\n"
-            f"Issue: {ticket.get('issue', '')}\n\n"
-            f"Resolve this ticket. Call tools one at a time. Wait for each result."
-        )}
+        {"role": "user", "content": user_message}
     ]
 
     steps = []
-    final_response = None
-    confidence = 0
+    max_steps = 8
 
     for step in range(max_steps):
-        try:
-            response = client.chat.completions.create(
-                model=MODEL,
-                messages=messages,
-                temperature=0.1,
-                max_tokens=300
-            )
-        except Exception as e:
-            print(f"❌ Groq API error: {e}")
-            break
+        response = call_groq_with_retry(messages)
 
-        llm_output = response.choices[0].message.content.strip()
-        print(f"\n[Step {step+1}] 🤖 {llm_output[:200]}")
+        text = response.choices[0].message.content.strip()
+        messages.append({"role": "assistant", "content": text})
 
-        # ── FINAL response detected ──
-        if "FINAL:" in llm_output:
-            final_text = llm_output.split("FINAL:", 1)[1].strip()
-            confidence = extract_confidence(final_text)
-            # Clean the confidence tag out of the customer-facing message
-            final_response = re.sub(r'\[Confidence:.*?\]', '', final_text).strip()
-            steps.append({
-                "step": step + 1,
-                "type": "final",
-                "content": final_response,
-                "confidence": confidence
-            })
+        # Check for FINAL
+        final_response, confidence = parse_final(text)
+        if final_response:
             print(f"\n✅ RESOLVED | Confidence: {confidence}%")
             print(f"💬 Response: {final_response}")
-            break
+            return {
+                "ticket_id": ticket_id,
+                "status": "resolved",
+                "response": final_response,
+                "confidence": confidence,
+                "steps": steps
+            }
 
-        # ── Tool call detected ──
-        tool_name, args = extract_tool_call(llm_output)
+        # Check for TOOL_CALL
+        tool_name, tool_args = parse_tool_call(text)
         if tool_name:
-            print(f"🔧 Tool: {tool_name} | Args: {args}")
-            result = run_tool(tool_name, args)
-            result_str = json.dumps(result)
-            print(f"📦 Result: {result_str[:150]}")
+            print(f"\n[Step {step+1}] 🤖 {tool_name}: {json.dumps(tool_args)}")
+            print("Please wait for the result...")
+            result = run_tool(tool_name, tool_args)
+            print(f"Result: {str(result)[:100]}")
 
             steps.append({
                 "step": step + 1,
-                "type": "tool_call",
                 "tool": tool_name,
-                "args": args,
-                "result": result,
-                "tool_success": result.get("success", False)
+                "args": tool_args,
+                "result": str(result)
             })
 
-            # Feed exactly ONE tool result back — prevents hallucination
-            messages.append({"role": "assistant", "content": f"TOOL_CALL: {tool_name}({json.dumps(args)})"})
-            messages.append({"role": "user", "content": f"TOOL RESULT: {result_str}\n\nNow call the next tool or write FINAL:"})
-
+            messages.append({
+                "role": "user",
+                "content": f"TOOL RESULT: {json.dumps(result)}\n\nNow call the next tool or write FINAL: your response [Confidence: X%]"
+            })
         else:
-            # LLM produced thinking text — keep it but nudge it forward
-            messages.append({"role": "assistant", "content": llm_output})
-            messages.append({"role": "user", "content": "Continue. Call a tool or write FINAL:"})
-            steps.append({"step": step + 1, "type": "thought", "content": llm_output})
+            messages.append({
+                "role": "user",
+                "content": "Please continue. Either call a tool using TOOL_CALL: tool_name({}) or write your FINAL: response [Confidence: X%]"
+            })
 
-    # ── Dead-letter queue: max steps hit without resolution ──
-    if not final_response:
-        final_response = "We were unable to automatically resolve your issue. A human agent will contact you shortly."
-        confidence = 0
-        steps.append({"step": max_steps, "type": "dead_letter", "content": final_response})
-        print(f"\n⚠️  Dead-lettered: {ticket_id}")
-
+    # Dead letter queue
+    print(f"\n⚠️ ESCALATED — max steps reached")
     return {
         "ticket_id": ticket_id,
-        "customer_name": ticket.get("customer_name"),
-        "customer_email": ticket.get("customer_email"),
-        "issue": ticket.get("issue"),
-        "final_response": final_response,
-        "confidence": confidence,
-        "steps_taken": len(steps),
-        "steps": steps,
-        "status": "resolved" if confidence > 0 else "escalated"
+        "status": "escalated",
+        "response": "This ticket has been escalated to a human agent for further review.",
+        "confidence": 0,
+        "steps": steps
     }

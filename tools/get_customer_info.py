@@ -1,20 +1,29 @@
-from data.mock_db import CUSTOMERS, EMAIL_INDEX
+﻿from data.mock_db import CUSTOMERS_BY_EMAIL, CUSTOMERS_BY_ID
 
-def get_customer_info(identifier: str) -> dict:
-    identifier = identifier.strip()
-    if identifier.upper() in CUSTOMERS:
-        customer = CUSTOMERS[identifier.upper()].copy()
-        customer["customer_id"] = identifier.upper()
-        customer["success"] = True
-        return customer
-    if identifier.lower() in EMAIL_INDEX:
-        cust_id = EMAIL_INDEX[identifier.lower()]
-        customer = CUSTOMERS[cust_id].copy()
-        customer["customer_id"] = cust_id
-        customer["success"] = True
-        return customer
+def get_customer_info(args):
+    identifier = args.get("identifier", "")
+    
+    # Try email first
+    customer = CUSTOMERS_BY_EMAIL.get(identifier)
+    
+    # Try customer ID if email not found
+    if not customer:
+        customer = CUSTOMERS_BY_ID.get(identifier)
+    
+    if not customer:
+        return {
+            "found": False,
+            "message": f"No customer found with identifier '{identifier}'. Ask customer for their registered email or order ID."
+        }
+    
     return {
-        "success": False,
-        "error": f"Customer '{identifier}' not found. Available emails: {list(EMAIL_INDEX.keys())}",
-        "identifier": identifier
+        "found": True,
+        "customer_id": customer["customer_id"],
+        "name": customer["name"],
+        "email": customer["email"],
+        "tier": customer["tier"],
+        "member_since": customer["member_since"],
+        "total_orders": customer["total_orders"],
+        "total_spent": customer["total_spent"],
+        "notes": customer["notes"]
     }

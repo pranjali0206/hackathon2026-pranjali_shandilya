@@ -1,30 +1,30 @@
-from tools.get_order import get_order
+﻿from data.mock_db import ORDERS_BY_ID
 
-REFUNDABLE_STATUSES = {"delivered", "cancelled"}
+def process_refund(args):
+    order_id = args.get("order_id", "")
+    reason = args.get("reason", "")
 
-def process_refund(order_id: str, reason: str = "Customer request") -> dict:
-    order = get_order(order_id)
-    if not order.get("success"):
+    order = ORDERS_BY_ID.get(order_id)
+
+    if not order:
         return {
             "success": False,
-            "error": f"Cannot refund: {order.get('error')}",
-            "order_id": order_id
+            "message": f"Order '{order_id}' not found. Cannot process refund."
         }
-    status = order.get("status")
-    if status not in REFUNDABLE_STATUSES:
+
+    if order.get("refund_status") == "refunded":
         return {
             "success": False,
-            "error": f"Order '{order_id}' has status '{status}' and is not eligible for refund.",
-            "order_id": order_id
+            "message": f"Refund for order '{order_id}' was already processed. No duplicate refund issued."
         }
-    import uuid
-    refund_id = f"REF-{uuid.uuid4().hex[:6].upper()}"
+
+    # Mark as refunded in memory
+    order["refund_status"] = "refunded"
+
     return {
         "success": True,
-        "refund_id": refund_id,
         "order_id": order_id,
-        "amount_refunded": order["price"],
-        "item": order["item"],
+        "amount": order["amount"],
         "reason": reason,
-        "message": f"Refund of ${order['price']:.2f} approved for {order['item']}."
+        "message": f"Refund of  processed successfully for order {order_id}. Customer will receive funds in 5-7 business days."
     }

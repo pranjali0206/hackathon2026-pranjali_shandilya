@@ -1,28 +1,19 @@
-from datetime import datetime
+﻿def update_ticket_status(args):
+    ticket_id = args.get("ticket_id", "")
+    new_status = args.get("new_status", "")
+    note = args.get("note", "")
 
-TICKET_STORE = {}
-VALID_STATUSES = {"open", "in_progress", "resolved", "closed", "escalated", "pending"}
-
-def update_ticket_status(ticket_id: str, new_status: str, note: str = "") -> dict:
-    new_status = new_status.lower().strip()
-    if new_status not in VALID_STATUSES:
+    valid_statuses = ["open", "in_progress", "resolved", "escalated", "closed"]
+    if new_status not in valid_statuses:
         return {
             "success": False,
-            "error": f"Invalid status '{new_status}'.",
-            "ticket_id": ticket_id
+            "message": f"Invalid status '{new_status}'. Valid options: {valid_statuses}"
         }
-    previous = TICKET_STORE.get(ticket_id, {}).get("status", "unknown")
-    TICKET_STORE[ticket_id] = {
-        "ticket_id": ticket_id,
-        "status": new_status,
-        "note": note,
-        "updated_at": datetime.now().isoformat(),
-        "previous_status": previous
-    }
+
     return {
         "success": True,
         "ticket_id": ticket_id,
-        "previous_status": previous,
         "new_status": new_status,
-        "message": f"Ticket '{ticket_id}' updated to '{new_status}'."
+        "note": note,
+        "message": f"Ticket {ticket_id} status updated to '{new_status}'. Note: {note}"
     }

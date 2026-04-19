@@ -1,0 +1,82 @@
+﻿[
+  {
+    "product_id": "P001",
+    "name": "ProSound Headphones",
+    "category": "electronics",
+    "price": 129.99,
+    "stock": 45,
+    "warranty_months": 12,
+    "return_window_days": 30,
+    "registered_online": false
+  },
+  {
+    "product_id": "P002",
+    "name": "RunFast Shoes",
+    "category": "footwear",
+    "price": 89.99,
+    "stock": 30,
+    "warranty_months": 0,
+    "return_window_days": 30,
+    "registered_online": false
+  },
+  {
+    "product_id": "P003",
+    "name": "BrewMaster Coffee Maker",
+    "category": "home_appliance",
+    "price": 199.99,
+    "stock": 12,
+    "warranty_months": 24,
+    "return_window_days": 30,
+    "registered_online": false
+  },
+  {
+    "product_id": "P004",
+    "name": "LiftPro Laptop Stand",
+    "category": "electronics_accessory",
+    "price": 49.99,
+    "stock": 60,
+    "warranty_months": 6,
+    "return_window_days": 60,
+    "registered_online": false
+  },
+  {
+    "product_id": "P005",
+    "name": "FlexBand Resistance Set",
+    "category": "sports_fitness",
+    "price": 39.99,
+    "stock": 80,
+    "warranty_months": 0,
+    "return_window_days": 30,
+    "registered_online": false
+  },
+  {
+    "product_id": "P006",
+    "name": "PulseX Smart Watch",
+    "category": "electronics",
+    "price": 249.99,
+    "stock": 20,
+    "warranty_months": 12,
+    "return_window_days": 15,
+    "registered_online": true
+  },
+  {
+    "product_id": "P007",
+    "name": "LumiDesk Lamp",
+    "category": "electronics_accessory",
+    "price": 44.99,
+    "stock": 35,
+    "warranty_months": 6,
+    "return_window_days": 30,
+    "registered_online": false
+  },
+  {
+    "product_id": "P008",
+    "name": "BassBox Bluetooth Speaker",
+    "category": "electronics",
+    "price": 79.99,
+    "stock": 25,
+    "warranty_months": 12,
+    "return_window_days": 30,
+    "registered_online": true
+  }
+]

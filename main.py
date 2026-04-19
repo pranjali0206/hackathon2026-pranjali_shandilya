@@ -1,39 +1,35 @@
-import json
+﻿import json
 import os
-from datetime import datetime
+import time
 from agent import process_ticket
+from data.mock_db import TICKETS
 
-TICKETS_FILE = "data/tickets.json"
-LOG_FILE = "logs/audit_log.json"
+print("🤖 AI Customer Support Agent Starting...")
+print(f"\n📋 Loaded {len(TICKETS)} tickets")
 
-def load_tickets():
-    with open(TICKETS_FILE, "r") as f:
-        return json.load(f)
+results = []
 
-def save_log(results):
-    os.makedirs("logs", exist_ok=True)
-    log = {
-        "run_timestamp": datetime.now().isoformat(),
-        "total_tickets": len(results),
-        "results": results
-    }
-    with open(LOG_FILE, "w") as f:
-        json.dump(log, f, indent=2)
-    print(f"\n📁 Audit log saved to {LOG_FILE}")
+for ticket in TICKETS:
+    ticket_id = ticket.get("ticket_id", "N/A")
+    customer_email = ticket.get("customer_email", "Unknown")
+    subject = ticket.get("subject", "")
+    body = ticket.get("body", "")
 
-def main():
-    print("🤖 AI Customer Support Agent Starting...\n")
-    tickets = load_tickets()
-    print(f"📋 Loaded {len(tickets)} tickets\n")
+    print(f"\n{'='*55}")
+    print(f"🎫 Ticket: {ticket_id} | {customer_email}")
+    print(f"📝 Subject: {subject}")
+    print(f"💬 {body[:80]}...")
+    print(f"{'='*55}")
 
-    results = []
-    for ticket in tickets:
-        result = process_ticket(ticket)
-        results.append(result)
+    result = process_ticket(ticket)
+    results.append(result)
+    time.sleep(30)
 
-    save_log(results)
-    print("\n✅ All tickets processed!")
-    print(f"   Total: {len(results)}")
+# Save audit log
+os.makedirs("logs", exist_ok=True)
+with open("logs/audit_log.json", "w") as f:
+    json.dump(results, f, indent=2)
 
-if __name__ == "__main__":
-    main()
+print(f"\n📁 Audit log saved to logs/audit_log.json")
+print(f"\n✅ All tickets processed!")
+print(f"   Total: {len(results)}")

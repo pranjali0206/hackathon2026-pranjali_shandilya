@@ -1,15 +1,26 @@
 import json
 import os
 
-# Load everything from one single JSON file
-_path = os.path.join(os.path.dirname(__file__), "mock_data.json")
-with open(_path, "r") as f:
-    _data = json.load(f)
+BASE = os.path.dirname(__file__)
 
-ORDERS    = _data["orders"]
-INVENTORY = _data["inventory"]
-CUSTOMERS = _data["customers"]
-SHIPPING  = _data["shipping"]
+def _load(filename):
+    filepath = os.path.join(BASE, filename)
+    with open(filepath, "r", encoding="utf-8-sig") as f:
+        return json.load(f)
 
-# Build email → customer_id reverse index
-EMAIL_INDEX = {v["email"]: k for k, v in CUSTOMERS.items()}
+# Load all data from separate files
+CUSTOMERS = _load("customers.json")
+ORDERS    = _load("orders.json")
+PRODUCTS  = _load("products.json")
+TICKETS   = _load("tickets.json")
+
+# Build lookup indexes
+CUSTOMERS_BY_EMAIL = {c["email"]: c for c in CUSTOMERS}
+CUSTOMERS_BY_ID    = {c["customer_id"]: c for c in CUSTOMERS}
+ORDERS_BY_ID       = {o["order_id"]: o for o in ORDERS}
+PRODUCTS_BY_ID     = {p["product_id"]: p for p in PRODUCTS}
+
+# Load knowledge base
+KB_PATH = os.path.join(os.path.dirname(BASE), "knowledge-base.md")
+with open(KB_PATH, "r", encoding="utf-8-sig") as f:
+    KNOWLEDGE_BASE = f.read()
