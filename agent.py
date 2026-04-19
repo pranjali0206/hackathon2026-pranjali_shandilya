@@ -97,7 +97,7 @@ def call_groq_with_retry(messages, retries=5, wait=20):
         except Exception as e:
             error_str = str(e)
             if "rate_limit" in error_str or "429" in error_str:
-                wait_time = wait * (attempt + 1)  # 20s, 40s, 60s...
+                wait_time = wait * (attempt + 1)
                 print(f"⏳ Rate limit hit — waiting {wait_time}s (attempt {attempt+1}/{retries})")
                 time.sleep(wait_time)
             elif "Connection error" in error_str or "getaddrinfo" in error_str:
@@ -140,12 +140,22 @@ Please resolve this ticket step by step using your tools and company policy.
         if final_response:
             print(f"\n✅ RESOLVED | Confidence: {confidence}%")
             print(f"💬 Response: {final_response}")
+
+            # Determine correct status based on tools used
+            tools_used = [s['tool'] for s in steps]
+            if 'escalate_ticket' in tools_used:
+                final_status = "escalated"
+            elif 'process_refund' in tools_used:
+                final_status = "refunded"
+            else:
+                final_status = "resolved"
+
             return {
                 "ticket_id": ticket_id,
                 "customer_email": customer_email,
                 "subject": subject,
                 "customer_tier": ticket.get("customer_tier", "standard"),
-                "status": "resolved",
+                "status": final_status,
                 "resolution": final_response,
                 "confidence": confidence,
                 "steps": steps

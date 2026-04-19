@@ -7,17 +7,17 @@ from data.mock_db import TICKETS
 print("🤖 AI Customer Support Agent Starting...")
 print(f"\n📋 Loaded {len(TICKETS)} tickets")
 
-demo_ids = ["TKT-001", "TKT-010", "TKT-017", "TKT-018"]
-TICKETS_TO_RUN = [t for t in TICKETS if t.get("ticket_id") in demo_ids]
-print(f"🎬 Demo mode: running {len(TICKETS_TO_RUN)} tickets")
+TICKETS_TO_RUN = TICKETS
+print(f"🚀 Running all {len(TICKETS_TO_RUN)} tickets")
 
 results = []
+os.makedirs("logs", exist_ok=True)
 
-for ticket in TICKETS_TO_RUN:
-    ticket_id = ticket.get("ticket_id", "N/A")
+for idx, ticket in enumerate(TICKETS_TO_RUN, 1):
+    ticket_id      = ticket.get("ticket_id", "N/A")
     customer_email = ticket.get("customer_email", "Unknown")
-    subject = ticket.get("subject", "")
-    body = ticket.get("body", "")
+    subject        = ticket.get("subject", "")
+    body           = ticket.get("body", "")
 
     print(f"\n{'='*55}")
     print(f"🎫 Ticket: {ticket_id} | {customer_email}")
@@ -25,15 +25,45 @@ for ticket in TICKETS_TO_RUN:
     print(f"💬 {body[:80]}...")
     print(f"{'='*55}")
 
+    # ✅ WRITE PROCESSING — frontend shows this instantly
+    with open("logs/live_status.json", "w") as f:
+        json.dump({
+            "current_ticket": ticket_id,
+            "current_email": customer_email,
+            "current_subject": subject,
+            "status": "processing",
+            "progress": idx,
+            "total": len(TICKETS_TO_RUN)
+        }, f)
+
     result = process_ticket(ticket)
     results.append(result)
-    time.sleep(3)
 
-# Save audit log
-os.makedirs("logs", exist_ok=True)
-with open("logs/audit_log.json", "w") as f:
-    json.dump(results, f, indent=2)
+    # ✅ WRITE DONE — frontend updates to green
+    with open("logs/live_status.json", "w") as f:
+        json.dump({
+            "current_ticket": ticket_id,
+            "current_email": customer_email,
+            "current_subject": subject,
+            "status": "done",
+            "progress": idx,
+            "total": len(TICKETS_TO_RUN)
+        }, f)
 
-print(f"\n📁 Audit log saved to logs/audit_log.json")
-print(f"\n✅ All tickets processed!")
-print(f"   Total: {len(results)}")
+    # ✅ SAVE audit log — ticket card appears in dashboard
+    with open("logs/audit_log.json", "w") as f:
+        json.dump(results, f, indent=2)
+
+    print(f"✅ {ticket_id} done — waiting 8s before next...")
+    time.sleep(8)
+
+# ✅ ALL DONE
+with open("logs/live_status.json", "w") as f:
+    json.dump({
+        "current_ticket": "ALL DONE",
+        "status": "complete",
+        "progress": len(TICKETS_TO_RUN),
+        "total": len(TICKETS_TO_RUN)
+    }, f)
+
+print(f"\n✅ All {len(results)} tickets processed!")

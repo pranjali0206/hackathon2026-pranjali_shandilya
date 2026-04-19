@@ -4,8 +4,8 @@
     "customer_email": "alice.turner@email.com",
     "subject": "Refund request for headphones",
     "customer_tier": "standard",
-    "status": "resolved",
-    "resolution": "Refund of $129.99 processed successfully for order ORD-1001. You will receive the funds in 5-7 business days. Thank you for shopping with ShopWave, Alice.",
+    "status": "escalated",
+    "resolution": "Your refund request for the ProSound Headphones (ORD-1001) has been escalated to a human agent for further review. They will contact you within the next 24-48 hours to discuss the warranty claim and determine the best course of action. Thank you for your patience and cooperation.",
     "confidence": 80,
     "steps": [
       {
@@ -26,119 +26,21 @@
       },
       {
         "step": 3,
-        "tool": "process_refund",
-        "args": {
-          "order_id": "ORD-1001",
-          "reason": "defective product"
-        },
-        "result": "{'success': True, 'order_id': 'ORD-1001', 'amount': 129.99, 'reason': 'defective product', 'message': 'Refund of  processed successfully for order ORD-1001. Customer will receive funds in 5-7 business days.'}"
-      }
-    ]
-  },
-  {
-    "ticket_id": "TKT-010",
-    "customer_email": "james.wu@email.com",
-    "subject": "Where is my order?",
-    "customer_tier": "standard",
-    "status": "resolved",
-    "resolution": "Hi James, thank you for reaching out to us about your order. I've checked on the status of your BrewMaster Coffee Maker, and it's still in transit. The expected delivery date was March 16th, but I understand that you haven't received it yet. I'll keep an eye on the tracking number and let you know if there are any updates. In the meantime, please let me know if you have any other questions or concerns.",
-    "confidence": 80,
-    "steps": [
-      {
-        "step": 1,
-        "tool": "get_customer_info",
-        "args": {
-          "identifier": "james.wu@email.com"
-        },
-        "result": "{'found': True, 'customer_id': 'C010', 'name': 'James Wu', 'email': 'james.wu@email.com', 'tier': 'standard', 'member_since': '2023-03-28', 'total_orders': 6, 'total_spent': 430.15, 'notes': 'No issues on record.'}"
-      },
-      {
-        "step": 2,
         "tool": "get_order",
         "args": {
-          "order_id": "ORD-1010"
+          "order_id": "ORD-1001"
         },
-        "result": "{'found': True, 'order_id': 'ORD-1010', 'customer_name': 'James Wu', 'customer_tier': 'standard', 'product_name': 'BrewMaster Coffee Maker', 'product_category': 'home_appliance', 'quantity': 1, 'amount': 199.99, 'status': 'shipped', 'order_date': '2024-03-12', 'delivery_date': None, 'return_deadline': None, 'refund_status': None, 'notes': 'In transit. Expected delivery 2024-03-16. Tracking: TRK-88291.'}"
-      },
-      {
-        "step": 3,
-        "tool": "check_shipping",
-        "args": {
-          "order_id": "ORD-1010"
-        },
-        "result": "{'found': True, 'order_id': 'ORD-1010', 'status': 'shipped', 'order_date': '2024-03-12', 'delivery_date': None, 'tracking_number': 'TRK-88291', 'notes': 'In transit. Expected delivery 2024-03-16. Tracking: TRK-88291.'}"
-      }
-    ]
-  },
-  {
-    "ticket_id": "TKT-017",
-    "customer_email": "david.park@email.com",
-    "subject": "Refund for shoes",
-    "customer_tier": "standard",
-    "status": "resolved",
-    "resolution": "Order ID ORD-9999 not found. Could you please verify the order ID and provide the correct one so I can assist you further?",
-    "confidence": 80,
-    "steps": [
-      {
-        "step": 1,
-        "tool": "get_customer_info",
-        "args": {
-          "identifier": "david.park@email.com"
-        },
-        "result": "{'found': True, 'customer_id': 'C004', 'name': 'David Park', 'email': 'david.park@email.com', 'tier': 'standard', 'member_since': '2022-01-30', 'total_orders': 9, 'total_spent': 780.2, 'notes': \"Has raised 1 chargeback dispute in the past \u2014 resolved in ShopWave's favour.\"}"
-      },
-      {
-        "step": 2,
-        "tool": "get_order",
-        "args": {
-          "order_id": "ORD-9999"
-        },
-        "result": "{'found': False, 'message': \"No order found with ID 'ORD-9999'. Please verify the order ID and try again.\"}"
-      }
-    ]
-  },
-  {
-    "ticket_id": "TKT-018",
-    "customer_email": "bob.mendes@email.com",
-    "subject": "Urgent refund needed",
-    "customer_tier": "standard",
-    "status": "resolved",
-    "resolution": "Hi Bob, thank you for reaching out. However, according to our records, you are a standard member, not a premium member. As a standard member, our standard return and refund policy applies. I'd be happy to assist you with a refund, but it will need to follow our standard process. Please let me know if you'd like to proceed.",
-    "confidence": 80,
-    "steps": [
-      {
-        "step": 1,
-        "tool": "get_customer_info",
-        "args": {
-          "identifier": "bob.mendes@email.com"
-        },
-        "result": "{'found': True, 'customer_id': 'C002', 'name': 'Bob Mendes', 'email': 'bob.mendes@email.com', 'tier': 'standard', 'member_since': '2023-10-05', 'total_orders': 3, 'total_spent': 210.0, 'notes': 'New customer. No prior refund history.'}"
-      },
-      {
-        "step": 2,
-        "tool": "get_order",
-        "args": {
-          "order_id": "ORD-1002"
-        },
-        "result": "{'found': True, 'order_id': 'ORD-1002', 'customer_name': 'Bob Mendes', 'customer_tier': 'standard', 'product_name': 'PulseX Smart Watch', 'product_category': 'electronics', 'quantity': 1, 'amount': 249.99, 'status': 'delivered', 'order_date': '2024-03-01', 'delivery_date': '2024-03-04', 'return_deadline': '2024-03-19', 'refund_status': None, 'notes': 'High-value item. 15-day return window applies.'}"
-      },
-      {
-        "step": 3,
-        "tool": "get_customer_info",
-        "args": {
-          "identifier": "bob.mendes@email.com"
-        },
-        "result": "{'found': True, 'customer_id': 'C002', 'name': 'Bob Mendes', 'email': 'bob.mendes@email.com', 'tier': 'standard', 'member_since': '2023-10-05', 'total_orders': 3, 'total_spent': 210.0, 'notes': 'New customer. No prior refund history.'}"
+        "result": "{'found': True, 'order_id': 'ORD-1001', 'customer_name': 'Alice Turner', 'customer_tier': 'vip', 'product_name': 'ProSound Headphones', 'product_category': 'electronics', 'quantity': 1, 'amount': 129.99, 'status': 'delivered', 'order_date': '2024-02-10', 'delivery_date': '2024-02-14', 'return_deadline': '2024-03-15', 'refund_status': None, 'notes': 'Delivered on time. No issues logged at delivery.'}"
       },
       {
         "step": 4,
-        "tool": "update_ticket_status",
+        "tool": "escalate_ticket",
         "args": {
           "ticket_id": "TKT-XXX",
-          "new_status": "social engineering",
-          "note": "Customer claims to be premium member but tier is listed as standard in customer info"
+          "reason": "warranty claim",
+          "priority": "medium"
         },
-        "result": "{'success': False, 'message': \"Invalid status 'social engineering'. Valid options: ['open', 'in_progress', 'resolved', 'escalated', 'closed']\"}"
+        "result": "{'success': True, 'ticket_id': 'TKT-XXX', 'escalated': True, 'priority': 'medium', 'reason': 'warranty claim', 'message': 'Ticket TKT-XXX has been escalated to a human agent with medium priority. Reason: warranty claim'}"
       }
     ]
   }
